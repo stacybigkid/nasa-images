@@ -1,0 +1,5 @@
+# ignore images saved in 'out' dir
+/out
+
+# ignore the apod-api
+/apod-api
