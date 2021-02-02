@@ -92,10 +92,18 @@ class WisePhoto:
             cv2.imwrite(f'./out/{apod.today}.png', img)
 
     # 2021-02-02
-    def draw_line(self, img, color, thickness):
-        
+    def draw_line(self, img, start, end, color, thickness):
+        ''' img : image to be drawn on
+            start : pixel location of line's origin as tuple
+            end : pixel location of line's end as tuple
+            color : desired color as rgb tuple
+            thickness : int as desired thickness
+        '''
+        lined_img = cv2.line(img, start, end, color, thickness)
+        return lined_img
 
 
 if __name__ == '__main__':
     apod = WisePhoto()
-    apod.show('apod', apod.photo)
+    line_img = apod.draw_line(apod.photo, (35, 590), (1035, 590), (0, 255, 255), 5)
+    apod.show('apod', line_img)
