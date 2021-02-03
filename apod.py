@@ -14,14 +14,14 @@ class WisePhoto:
     Photo of the Day API. Methods are image processing functions from
     OpenCV that can be applied to the APOD.
 
-    param:: date = the date of the desired APOD. If not provided, today's photo will be retrieved
+    param:: date = the date of the desired APOD in 'YYYY-MM-DD' format. If not provided, today's photo will be retrieved
     '''
     def __init__(self, date=None):
 
         if not date:
             self.date = str(date.today())
         else:
-            self.date = str(date)
+            self.date = date
 
         # Photo attributes
         self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date=' + date
