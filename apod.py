@@ -12,16 +12,23 @@ class WisePhoto:
     '''
     A class to generate a photo from NASA's Astronomy
     Photo of the Day API. Methods are image processing functions from
-    OpenCV that can be intuitively applied to the APOD.
-    '''
-    def __init__(self):
+    OpenCV that can be applied to the APOD.
 
-        self.today = str(date.today())
+    param:: date = the date of the desired APOD. If not provided, today's photo will be retrieved
+    '''
+    def __init__(self, date=None):
+
+        if not date:
+            self.date = str(date.today())
+        else:
+            self.date = str(date)
 
         # Photo attributes
-        self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date='
-        self.photo_request_today = self.photo_request + self.today
-        self.photo = self.get_photo()
+        self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date=' + date
+        try:
+            self.photo = self.get_photo()
+        except:
+            print('There is no APOD for the provided date!')
 
         # Quote attribues
         self.zen_request_today = 'https://zenquotes.io/api/today'
@@ -29,7 +36,7 @@ class WisePhoto:
         
 
     def get_photo(self):
-        request = urllib.request.Request(self.photo_request_today)
+        request = urllib.request.Request(self.photo_request)     
         response = urllib.request.urlopen(request)
         data = response.read()
         values = json.loads(data)  
@@ -89,7 +96,7 @@ class WisePhoto:
         if k == 27: 
             cv2.destroyAllWindows()
         elif k == ord('s'): 
-            cv2.imwrite(f'./out/{apod.today}.png', img)
+            cv2.imwrite(f'./out/{name}.png', img)
 
     # 2021-02-02
     def draw_line(self, img, start, end, color, thickness):
@@ -102,8 +109,13 @@ class WisePhoto:
         lined_img = cv2.line(img, start, end, color, thickness)
         return lined_img
 
+    # 2021-02-03 - no APOD!
+
+    # 2021-02-04
+
+
 
 if __name__ == '__main__':
-    apod = WisePhoto()
-    line_img = apod.draw_line(apod.photo, (35, 590), (1035, 590), (0, 255, 255), 5)
-    apod.show('apod', line_img)
+    apod = WisePhoto('2021-01-20')
+    # line_img = apod.draw_line(apod.photo, (35, 590), (1035, 590), (0, 255, 255), 5)
+    apod.show(apod.date, apod.photo)
