@@ -1,12 +1,13 @@
 # imports
 import os
-from datetime import date
+from datetime import date as dt
 import json
 import urllib.request
 import cv2
 from skimage import io
 import matplotlib.pyplot as plt
 import textwrap
+import numpy as np
 
 class WisePhoto:
     '''
@@ -19,16 +20,18 @@ class WisePhoto:
     def __init__(self, date=None):
 
         if not date:
-            self.date = str(date.today())
+            self.date = str(dt.today())
         else:
             self.date = date
 
         # Photo attributes
-        self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date=' + date
+        self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date=' + self.date
         try:
             self.photo = self.get_photo()
         except:
             print('There is no APOD for the provided date!')
+
+        self.photo_shape = self.photo.shape
 
         # Quote attribues
         self.zen_request_today = 'https://zenquotes.io/api/today'
@@ -98,7 +101,7 @@ class WisePhoto:
         elif k == ord('s'): 
             cv2.imwrite(f'./out/{name}.png', img)
 
-    # 2021-02-02
+    # 2021-02-02 - draw line
     def draw_line(self, img, start, end, color, thickness):
         ''' img : image to be drawn on
             start : pixel location of line's origin as tuple
@@ -109,13 +112,31 @@ class WisePhoto:
         lined_img = cv2.line(img, start, end, color, thickness)
         return lined_img
 
-    # 2021-02-03 - no APOD!
+    # 2021-02-03 - no APOD! refactored class
 
-    # 2021-02-04
-
+    # 2021-02-04 - draw polygon
+    def draw_polygon(self, img, pts, close=True, fill=False, color=(255,255,255)):
+        '''
+        draw polygon on input img
+        img: image to be drawn on 
+        pts: list of coordinates of vertices in the following format: [[10,5],[20,30],[70,20],[50,10]]
+        close: Boolean. Default is True, which will close the shape. False will draw polylines joining the points, but will not close the shape
+        fill: Boolean. Default is False, which will not fill in polygon with specified color. True results in polygon filled with specified color.
+        color: tuple of BGR values of desired color of polygon; default is White
+        '''
+        pts =  np.array(pts, np.int32)
+        pts = pts.reshape((-1,1,2))
+        
+        if fill:
+            img = cv2.fillPoly(img, [pts], color, cv2.LINE_AA)
+        else:
+            img = cv2.polylines(img, [pts], close, color)
+        
+        return img
 
 
 if __name__ == '__main__':
-    apod = WisePhoto('2021-01-20')
-    # line_img = apod.draw_line(apod.photo, (35, 590), (1035, 590), (0, 255, 255), 5)
-    apod.show(apod.date, apod.photo)
+    apod = WisePhoto()
+    pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
+    poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
+    apod.show('poly-img', poly)
