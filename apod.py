@@ -120,8 +120,10 @@ class WisePhoto:
         draw polygon on input img
         img: image to be drawn on 
         pts: list of coordinates of vertices in the following format: [[10,5],[20,30],[70,20],[50,10]]
-        close: Boolean. Default is True, which will close the shape. False will draw polylines joining the points, but will not close the shape
-        fill: Boolean. Default is False, which will not fill in polygon with specified color. True results in polygon filled with specified color.
+        close: Boolean. Default is True, which will close the shape. 
+                False will draw polylines joining the points, but will not close the shape
+        fill: Boolean. Default is False, which will not fill in polygon with specified color. 
+                True results in polygon filled with specified color.
         color: tuple of BGR values of desired color of polygon; default is White
         '''
         pts =  np.array(pts, np.int32)
@@ -134,9 +136,34 @@ class WisePhoto:
         
         return img
 
+    # 2021-02-05 - mouse event options
+        # ['EVENT_FLAG_ALTKEY', 'EVENT_FLAG_CTRLKEY', 'EVENT_FLAG_LBUTTON', 'EVENT_FLAG_MBUTTON', 
+        # 'EVENT_FLAG_RBUTTON', 'EVENT_FLAG_SHIFTKEY', 'EVENT_LBUTTONDBLCLK', 'EVENT_LBUTTONDOWN', 
+        # 'EVENT_LBUTTONUP', 'EVENT_MBUTTONDBLCLK', 'EVENT_MBUTTONDOWN', 'EVENT_MBUTTONUP', 'EVENT_MOUSEHWHEEL', 
+        # 'EVENT_MOUSEMOVE', 'EVENT_MOUSEWHEEL', 'EVENT_RBUTTONDBLCLK', 'EVENT_RBUTTONDOWN', 'EVENT_RBUTTONUP']
+    def draw_circle(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDBLCLK:
+            cv2.circle(img, (x,y), 100, (255,255,0), -1)
+
+
+
+
+
+
 
 if __name__ == '__main__':
     apod = WisePhoto()
-    pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
-    poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
-    apod.show('poly-img', poly)
+    # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
+    # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
+
+    img = apod.photo
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', apod.draw_circle)
+
+    
+    while(1):
+        cv2.imshow('image',img)
+        if cv2.waitKey(20) & 0xFF == 27:
+            break
+    cv2.destroyAllWindows()
+
