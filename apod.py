@@ -34,8 +34,14 @@ class WisePhoto:
         self.photo_shape = self.photo.shape
 
         # Quote attribues
-        self.zen_request_today = 'https://zenquotes.io/api/today'
-        self.zen_request_random = 'https://zenquotes.io/api/random'
+        if date:
+            self.zen_request = 'https://zenquotes.io/api/random'
+        else:
+            self.zen_request = 'https://zenquotes.io/api/today'
+        self.font = cv2.FONT_HERSHEY_TRIPLEX
+        self.fontScale = 2
+        self.color = (255,255,255)
+        self.thickness = 2
         
 
     def get_photo(self):
@@ -50,42 +56,56 @@ class WisePhoto:
         return bgr
 
     def get_quote(self):
-        request = urllib.request.Request(self.zen_request_today)
+        request = urllib.request.Request(self.zen_request)
         response = urllib.request.urlopen(request)
         data = response.read()
         values = json.loads(data)[0]
         quote = values['q']
         return quote
 
+    def get_text_size(self, quote):
+        text = quote
+        text_size = cv2.getTextSize(text=text, 
+                                    fontFace=self.font, 
+                                    fontScale=self.fontScale, 
+                                    thickness=self.thickness)
+        px_w, px_h = text_size[0]
+        return (px_w, px_h)
+
     def wise_photo(self):
-        bg = self.get_photo()
-        text_width = 300
-        print('Text width: ', text_width)
-        # text_height = int(0.8 * bg.shape[1])
-        # org_x = int((bg.shape[0] - text_width)/2)
-        # org_y = int((bg.shape[1] - text_height)/2)
-        text = self.get_quote()
-        wrapped_text = textwrap.wrap(text, width=text_width)
+        bg = self.photo
+        bg_h, bg_w, bg_d = bg.shape
+        # print(f'shape: {bg.shap}')
+        quote = self.get_quote()
+        qu_w, qu_h = self.get_text_size(quote)
+    
+        chars = len(quote)
+        px_per_char = qu_w // chars
+
+        qu_bbox_w = int(0.75 * bg_w)
+        qu_bbox_x = int(0.25 * bg_w / 2) 
+
+        char_w = qu_bbox_w // px_per_char
+        
+        print(f'img h: {bg_h}, img w: {bg_w}')
+        print('Text width: ', char_w)
+        
+        wrapped_text = textwrap.wrap(quote, width=char_w)
+        num_lines = len(wrapped_text) - 1
         print(wrapped_text)
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        fontScale = 3
-        # org = (org_x, org_y)
-        color = (255,255,255)
-        thickness = 5
-
+        
         for i, line in enumerate(wrapped_text):
-            textsize = cv2.getTextSize(line, font, fontScale, 
-                        thickness)[0]
+            gap = int(qu_h + (0.3 * qu_h))
+            qu_bbox_h = gap * num_lines
+            ori_y = (bg_h - qu_bbox_h) // 2
+            y = ori_y + (i * gap)
+            # x = (bg_w - (len(line) * px_per_char)) // 2
+            x = qu_bbox_h
 
-            gap = textsize[1] + 10
-
-            y = int((bg.shape[0] + textsize[1]) / 2) + i * gap
-            x = int((bg.shape[1] - textsize[0]) / 2)
-
-            wise_photo = cv2.putText(bg, line, (x, y), font,
-                            fontScale, 
-                            color, 
-                            thickness, 
+            wise_photo = cv2.putText(bg, line, (x, y), self.font,
+                            self.fontScale, 
+                            self.color, 
+                            self.thickness, 
                             lineType = cv2.LINE_AA)
 
         return wise_photo
@@ -162,11 +182,12 @@ class WisePhoto:
 
 
 if __name__ == '__main__':
-    apod = WisePhoto()
+    apod = WisePhoto(date='2021-02-02')
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
-    apod.click_draw_cirle(apod.photo)
+    img = apod.wise_photo()
+    apod.show('Wise Photo', img)
    
 
 
