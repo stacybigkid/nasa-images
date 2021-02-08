@@ -71,6 +71,7 @@ class WisePhoto:
         return (px_w, px_h)
 
     def get_accent_color(self, img):
+        #TODO : clean up this function
         lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
         k_in = lab.reshape((-1, 3))
         # print(f'lab dytpe: {lab.dtype}')
