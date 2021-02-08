@@ -31,8 +31,6 @@ class WisePhoto:
         except:
             print('There is no APOD for the provided date!')
 
-        self.photo_shape = self.photo.shape
-
         # Quote attribues
         if date:
             self.zen_request = 'https://zenquotes.io/api/random'
@@ -72,10 +70,29 @@ class WisePhoto:
         px_w, px_h = text_size[0]
         return (px_w, px_h)
 
+    def get_accent_color(self, img):
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
+        k_in = lab.reshape((-1, 3))
+        # print(f'lab dytpe: {lab.dtype}')
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        flags = cv2.KMEANS_RANDOM_CENTERS
+        compactness, labels, centers = cv2.kmeans(k_in, 5, None, criteria, 10, flags)
+        centers = np.uint8(centers)
+        # print(f'centers:\n{centers}')
+
+        bgr_centers = []
+        bgr = cv2.cvtColor(np.uint8([centers]), cv2.COLOR_Lab2BGR)
+        bgr_centers.append(np.squeeze(bgr))
+        center = bgr_centers[0][3]
+        center = (int(center[0]), int(center[1]), int(center[2]))
+        # print(f'bgr centers:\n{bgr_centers}')
+        # print(f'bgr centers:\n{center.dtype}')
+        return center
+
     def wise_photo(self):
         bg = self.photo
-        bg_h, bg_w, bg_d = bg.shape
-        # print(f'shape: {bg.shap}')
+        bg_h, bg_w, _ = bg.shape
+        # print(f'shape: {bg.shape}')
         quote = self.get_quote()
         qu_w, qu_h = self.get_text_size(quote)
     
@@ -93,18 +110,26 @@ class WisePhoto:
         wrapped_text = textwrap.wrap(quote, width=char_w)
         num_lines = len(wrapped_text) - 1
         print(wrapped_text)
+
+        color = self.get_accent_color(bg)
+        print(f'color: {color}')
         
         for i, line in enumerate(wrapped_text):
             gap = int(qu_h + (0.3 * qu_h))
             qu_bbox_h = gap * num_lines
             ori_y = (bg_h - qu_bbox_h) // 2
             y = ori_y + (i * gap)
+
+            # start new line according to width in px of that line
             # x = (bg_w - (len(line) * px_per_char)) // 2
-            x = qu_bbox_h
+            
+            # start new line at same x position
+            x = qu_bbox_x
+            
 
             wise_photo = cv2.putText(bg, line, (x, y), self.font,
                             self.fontScale, 
-                            self.color, 
+                            color, 
                             self.thickness, 
                             lineType = cv2.LINE_AA)
 
@@ -135,7 +160,7 @@ class WisePhoto:
     # 2021-02-03 - no APOD! refactored class
 
     # 2021-02-04 - draw polygon
-    def draw_polygon(self, img, pts, close=True, fill=False, color=(255,255,255)):
+    def draw_polygon(self, img, pts, close=True, fill=False, color=None):
         '''
         draw polygon on input img
         img: image to be drawn on 
@@ -146,6 +171,7 @@ class WisePhoto:
                 True results in polygon filled with specified color.
         color: tuple of BGR values of desired color of polygon; default is White
         '''
+        color = self.color
         pts =  np.array(pts, np.int32)
         pts = pts.reshape((-1,1,2))
         
@@ -182,12 +208,15 @@ class WisePhoto:
 
 
 if __name__ == '__main__':
-    apod = WisePhoto(date='2021-02-02')
+    apod = WisePhoto(date = '2021-01-29')
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
     img = apod.wise_photo()
     apod.show('Wise Photo', img)
+
+    # colors = apod.get_accent_color(apod.photo)
+    # apod.show('k means', colors)
    
 
 
