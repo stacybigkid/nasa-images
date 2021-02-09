@@ -149,12 +149,23 @@ class WisePhoto:
 
     # 2021-02-02 - draw line
     def draw_line(self, img, start, end, color, thickness):
-        ''' img : image to be drawn on
-            start : pixel location of line's origin as tuple
-            end : pixel location of line's end as tuple
-            color : desired color as rgb tuple
-            thickness : int as desired thickness
+        ''' draw line on input img
+        :param img: image to be drawn on 
+        :param type: BRG img
+        
+        :param start: pixel location of line's origin 
+        :param type: (x,y) as tuple
+            
+        :param end: pixel location of line's end 
+        :param type: (x,y) as tuple
+            
+        :param color: desired color of line; default is white
+        :param type: BGR tuple
+            
+        :param thickness: desired thickness of line
+        :param type: int
         '''
+        color = self.color
         lined_img = cv2.line(img, start, end, color, thickness)
         return lined_img
 
@@ -162,15 +173,25 @@ class WisePhoto:
 
     # 2021-02-04 - draw polygon
     def draw_polygon(self, img, pts, close=True, fill=False, color=None):
-        '''
-        draw polygon on input img
-        img: image to be drawn on 
-        pts: list of coordinates of vertices in the following format: [[10,5],[20,30],[70,20],[50,10]]
-        close: Boolean. Default is True, which will close the shape. 
-                False will draw polylines joining the points, but will not close the shape
-        fill: Boolean. Default is False, which will not fill in polygon with specified color. 
+        '''draw polygon on input img
+
+        :param img: image to be drawn on
+        :param type: BGR img 
+        
+        :param pts: coordinates of polygon vertices 
+        :param type: list in the following format: [[10,5],[20,30],[70,20],[50,10]]
+
+        :param close: Default is True, which will close the shape. \
+                False will draw polylines joining the points, \
+                but will not close the shape.
+        :param type: Boolean
+
+        :param fill: Default is False, which will not fill in polygon with specified color. \
                 True results in polygon filled with specified color.
-        color: tuple of BGR values of desired color of polygon; default is White
+        :param type: Boolean
+        
+        :param color: desired color of polygon; default is White
+        :param type: tuple of BGR values 
         '''
         color = self.color
         pts =  np.array(pts, np.int32)
@@ -215,6 +236,7 @@ if __name__ == '__main__':
 
     img = apod.wise_photo()
     apod.show('Wise Photo', img)
+    apod.draw_polygon()
 
     # colors = apod.get_accent_color(apod.photo)
     # apod.show('k means', colors)
