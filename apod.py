@@ -10,11 +10,11 @@ import numpy as np
 
 class WisePhoto:
     '''
-    A class to generate a photo from NASA's Astronomy
-    Photo of the Day API. Methods are image processing functions from
-    OpenCV that can be applied to the APOD.
+    A class to generate a photo from NASA's AstronomynPhoto of the Day API. 
+    Methods are image processing functions from OpenCV that can be applied to the APOD.
 
-    param:: date = the date of the desired APOD in 'YYYY-MM-DD' format. If not provided, today's photo will be retrieved
+    :param date: the date of the desired APOD in 'YYYY-MM-DD' format. default is today's date.
+    :param type: string
     '''
     def __init__(self, date=None):
 
