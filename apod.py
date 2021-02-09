@@ -5,7 +5,6 @@ import json
 import urllib.request
 import cv2
 from skimage import io
-import matplotlib.pyplot as plt
 import textwrap
 import numpy as np
 
@@ -105,15 +104,15 @@ class WisePhoto:
 
         char_w = qu_bbox_w // px_per_char
         
-        print(f'img h: {bg_h}, img w: {bg_w}')
-        print('Text width: ', char_w)
+        # print(f'img h: {bg_h}, img w: {bg_w}')
+        # print('Text width: ', char_w)
         
         wrapped_text = textwrap.wrap(quote, width=char_w)
         num_lines = len(wrapped_text) - 1
-        print(wrapped_text)
+        # print(wrapped_text)
 
         color = self.get_accent_color(bg)
-        print(f'color: {color}')
+        # print(f'color: {color}')
         
         for i, line in enumerate(wrapped_text):
             gap = int(qu_h + (0.3 * qu_h))
