@@ -10,11 +10,11 @@ import numpy as np
 
 class WisePhoto:
     '''
-    A class to generate a photo from NASA's AstronomynPhoto of the Day API. 
+    A class to generate a photo from NASA's Astronomy Photo of the Day API. 
     Methods are image processing functions from OpenCV that can be applied to the APOD.
 
     :param date: the date of the desired APOD in 'YYYY-MM-DD' format. default is today's date.
-    :param type: string
+    :param type: str
     '''
     def __init__(self, date=None):
 
@@ -76,7 +76,7 @@ class WisePhoto:
         # print(f'lab dytpe: {lab.dtype}')
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
         flags = cv2.KMEANS_RANDOM_CENTERS
-        compactness, labels, centers = cv2.kmeans(k_in, 5, None, criteria, 10, flags)
+        _, labels, centers = cv2.kmeans(k_in, 5, None, criteria, 10, flags)
         centers = np.uint8(centers)
         # print(f'centers:\n{centers}')
 
@@ -86,8 +86,36 @@ class WisePhoto:
         center = bgr_centers[0][3]
         center = (int(center[0]), int(center[1]), int(center[2]))
         # print(f'bgr centers:\n{bgr_centers}')
-        # print(f'bgr centers:\n{center.dtype}')
+        # print(f'bgr centers data type:\n{center.dtype}')
         return center
+
+    def get_color_proportions(self, img, k=5):
+        ''' calculate proportion of each of k colors in input img
+        :param img: img where k colors should be extracted and quantified 
+        :type: BGR img
+
+        :param k: default=5; number of colors to separate img into
+        :type: int 
+        '''
+        # preprocess img
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
+        k_in = lab.reshape((-1, 3))
+
+        # k means
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        flags = cv2.KMEANS_RANDOM_CENTERS
+        _, labels, centers = cv2.kmeans(k_in, k, None, criteria, 10, flags)
+        
+        # calculate proportions of labels in img
+        unique, counts = np.unique(labels, return_counts=True)
+        pp = np.divide(counts, len(labels))
+        pp = dict(zip(unique, pp))
+        print(f'Unique, proportions: {pp}')
+
+        # TODO reorder pp dict by values
+        # TODO return center of colors ordered by proportion
+
+        return pp
 
     def wise_photo(self):
         bg = self.photo
@@ -153,10 +181,10 @@ class WisePhoto:
         :param type: BRG img
         
         :param start: pixel location of line's origin 
-        :param type: (x,y) as tuple
+        :param type: (x,y) tuple
             
         :param end: pixel location of line's end 
-        :param type: (x,y) as tuple
+        :param type: (x,y) tuple
             
         :param color: desired color of line; default is white
         :param type: BGR tuple
@@ -183,14 +211,14 @@ class WisePhoto:
         :param close: Default is True, which will close the shape. \
                 False will draw polylines joining the points, \
                 but will not close the shape.
-        :param type: Boolean
+        :param type: bool
 
         :param fill: Default is False, which will not fill in polygon with specified color. \
                 True results in polygon filled with specified color.
-        :param type: Boolean
+        :param type: bool
         
         :param color: desired color of polygon; default is White
-        :param type: tuple of BGR values 
+        :param type: BGR tuple 
         '''
         color = self.color
         pts =  np.array(pts, np.int32)
@@ -229,16 +257,14 @@ class WisePhoto:
 
 
 if __name__ == '__main__':
-    apod = WisePhoto(date = '2021-01-29')
+    apod = WisePhoto()
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
-    img = apod.wise_photo()
-    apod.show('Wise Photo', img)
-    apod.draw_polygon()
+    # img = apod.wise_photo()
+    # apod.show(apod.date, img)
 
-    # colors = apod.get_accent_color(apod.photo)
-    # apod.show('k means', colors)
+    colors = apod.get_color_proportions(apod.photo)
    
 
 
