@@ -69,34 +69,16 @@ class WisePhoto:
         px_w, px_h = text_size[0]
         return (px_w, px_h)
 
-    def get_accent_color(self, img):
-        #TODO : clean up this function
-        lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
-        k_in = lab.reshape((-1, 3))
-        # print(f'lab dytpe: {lab.dtype}')
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-        flags = cv2.KMEANS_RANDOM_CENTERS
-        _, labels, centers = cv2.kmeans(k_in, 5, None, criteria, 10, flags)
-        centers = np.uint8(centers)
-        # print(f'centers:\n{centers}')
-
-        bgr_centers = []
-        bgr = cv2.cvtColor(np.uint8([centers]), cv2.COLOR_Lab2BGR)
-        bgr_centers.append(np.squeeze(bgr))
-        center = bgr_centers[0][3]
-        center = (int(center[0]), int(center[1]), int(center[2]))
-        # print(f'bgr centers:\n{bgr_centers}')
-        # print(f'bgr centers data type:\n{center.dtype}')
-        return center
-
-    def get_color_proportions(self, img, k=5):
+    def get_accent_color(self, img, k=8):
         ''' calculate proportion of each of k colors in input img
         :param img: img where k colors should be extracted and quantified 
         :type: BGR img
 
-        :param k: default=5; number of colors to separate img into
+        :param k: number of colors to separate img into, must eb 3 or more; default=5
         :type: int 
         '''
+        assert k >= 3, 'k must be set to 3 or more!'
+
         # preprocess img
         lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab).astype(np.float32)
         k_in = lab.reshape((-1, 3))
@@ -105,17 +87,30 @@ class WisePhoto:
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
         flags = cv2.KMEANS_RANDOM_CENTERS
         _, labels, centers = cv2.kmeans(k_in, k, None, criteria, 10, flags)
-        
+        # print('Centers: ', centers)
+                
         # calculate proportions of labels in img
         unique, counts = np.unique(labels, return_counts=True)
         pp = np.divide(counts, len(labels))
-        pp = dict(zip(unique, pp))
-        print(f'Unique, proportions: {pp}')
+        pp = zip(unique, pp)
+        pp = sorted(pp, key=lambda p: p[1], reverse=True) 
+        # print(f"Unique, proportions:\n {[p for p in pp]}")
 
-        # TODO reorder pp dict by values
-        # TODO return center of colors ordered by proportion
+        # return least common color for text
+        color_label = pp[-1][0]
+        # print('color label: ', color_label)
 
-        return pp
+        # reformat color centers to bgr tuples
+        bgr_centers = cv2.cvtColor(np.uint8([centers]), cv2.COLOR_Lab2BGR).astype(int)
+        bgr_centers = np.squeeze(bgr_centers)
+        bgr_centers = [tuple(c) for c in bgr_centers]
+        # print('BGR Centers: ', bgr_centers)
+
+        # change dtype to int from int32
+        color = bgr_centers[color_label]
+        color = tuple([int(i) for i in color])
+
+        return color
 
     def wise_photo(self):
         bg = self.photo
@@ -261,10 +256,9 @@ if __name__ == '__main__':
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
-    # img = apod.wise_photo()
-    # apod.show(apod.date, img)
+    img = apod.wise_photo()
+    apod.show(apod.date, img)
 
-    colors = apod.get_color_proportions(apod.photo)
    
 
 
