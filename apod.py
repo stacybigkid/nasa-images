@@ -19,15 +19,12 @@ class WisePhoto:
     '''
     def __init__(self):
 
-        # NASA API key required 
+        # NASA API key required in root directory config.json
         # generate one here: https://api.nasa.gov/index.html
-        # see example_config.json   
-        try: 
-            with open('./config.json') as j:       
-                credentials = json.load(j)
-                self.key = credentials['key']
-        except:
-            print('No key listed in config.json')
+        # see example_config.json for formatting
+        with open('./config.json') as j:       
+            credentials = json.load(j)
+            self.key = credentials['key']
 
         # date
         self.date = str(dt.today())
