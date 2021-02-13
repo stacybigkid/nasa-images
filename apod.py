@@ -42,15 +42,15 @@ class WisePhoto:
         self.thickness = 2
 
         # storage
-        if not os.path.exists('./out'):
-            self.out_path = os.makedirs('./out')
-        else: 
-            self.out_path = './out'
+        out_path = './out'
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
+        self.out_path = out_path
         
-        if not os.path.exists('./library'):
-            self.library = os.makedirs('./library')
-        else:
-            self.library = './library'
+        library_path = './library'
+        if not os.path.exists(library_path):
+            os.makedirs(library_path)    
+        self.library = library_path
 
         
 
