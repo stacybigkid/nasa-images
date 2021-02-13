@@ -6,5 +6,5 @@
 # ignore the apod-api
 /apod-api
 
-# ignore keys
-key
+# hide credentials
+config.json

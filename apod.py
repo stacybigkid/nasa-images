@@ -7,6 +7,7 @@ import cv2
 from skimage import io
 import textwrap
 import numpy as np
+import random
 
 class WisePhoto:
     '''
@@ -16,26 +17,34 @@ class WisePhoto:
     :param date: the date of the desired APOD in 'YYYY-MM-DD' format. default is today's date.
     :param type: str
     '''
-    def __init__(self, date=None):
+    def __init__(self):
+
+        # NASA API key required 
+        # generate one here: https://api.nasa.gov/index.html
+        # see example_config.json   
+        try: 
+            with open('./config.json') as j:       
+                credentials = json.load(j)
+                self.key = credentials['key']
+        except:
+            print('No key listed in config.json')
 
         # date
-        if not date:
-            self.date = str(dt.today())
-        else:
-            self.date = date
+        self.date = str(dt.today())
 
         # photo attributes
-        self.photo_request = 'http://0.0.0.0:5001/v1/apod/?concept_tags=True&date=' + self.date
-        try:
-            self.photo = self.get_photo()
-        except:
-            print('There is no APOD for the provided date!')
+        # try getting APOD with today's date
+        self.photo = self.get_photo()
+        
+        # if today's date returns None, try again with
+        # random date until img populates self.photo
+        max_tries = 5
+        try_count = 1
+        while (self.photo is None and try_count < max_tries):
+            self.photo = self.get_photo(self.generate_date())
+            try_count += 1
 
         # quote attribues
-        if date:
-            self.zen_request = 'https://zenquotes.io/api/random'
-        else:
-            self.zen_request = 'https://zenquotes.io/api/today'
         self.font = cv2.FONT_HERSHEY_TRIPLEX
         self.fontScale = 2
         self.color = (255,255,255)
@@ -45,28 +54,48 @@ class WisePhoto:
         out_path = './out'
         if not os.path.exists(out_path):
             os.makedirs(out_path)
-        self.out_path = out_path
+        self.out = out_path
         
         library_path = './library'
         if not os.path.exists(library_path):
             os.makedirs(library_path)    
-        self.library = library_path
+        self.library = library_path      
 
-        
+    # methods
+    def get_photo(self, date=None):
+        if not date:
+            date = self.date
+        else:
+            date = date
 
-    def get_photo(self):
-        request = urllib.request.Request(self.photo_request)     
+        photo_request = f'https://api.nasa.gov/planetary/apod?api_key={self.key}&date={date}'
+        request = urllib.request.Request(photo_request)     
         response = urllib.request.urlopen(request)
         data = response.read()
-        values = json.loads(data)  
-        img_url = values['url']
-        rgb = io.imread(img_url)
-        r,g,b = cv2.split(rgb)
-        bgr = cv2.merge([b,g,r])
-        return bgr
+        values = json.loads(data) 
+        
+        media_type = values['media_type']
+        if media_type == 'image': 
+            img_url = values['url']
+            rgb = io.imread(img_url)
+            r,g,b = cv2.split(rgb)
+            bgr = cv2.merge([b,g,r])
+            # print(f"Date: {date} has APOD")
+            return bgr
+        else: 
+            # print(f"Date: {date} has no APOD")
+            return None
+    
+    def generate_date(self):
+        mmdd = lambda x: f'0{x}' if (len(str(x)) < 2) else str(x)
+        random_year = str(random.randint(1996, 2021))
+        random_month = mmdd(random.randint(1, 12))
+        random_day = mmdd(random.randint(1,31))
+        return f'{random_year}-{random_month}-{random_day}'
 
     def get_quote(self):
-        request = urllib.request.Request(self.zen_request)
+        zen_request = 'https://zenquotes.io/api/today'
+        request = urllib.request.Request(zen_request)
         response = urllib.request.urlopen(request)
         data = response.read()
         values = json.loads(data)[0]
@@ -162,7 +191,6 @@ class WisePhoto:
             # start new line at same x position
             x = qu_bbox_x
             
-
             wise_photo = cv2.putText(bg, line, (x, y), self.font,
                             self.fontScale, 
                             color, 
@@ -265,14 +293,13 @@ class WisePhoto:
 
 
 if __name__ == '__main__':
+    
     apod = WisePhoto()
+
+
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
     img = apod.wise_photo()
     apod.show(apod.date, img)
-
-   
-
-
 
