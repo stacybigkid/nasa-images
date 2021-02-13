@@ -1,5 +1,10 @@
-# ignore images saved in 'out' dir
+# ignore images saved 
 /out
+/library
+
 
 # ignore the apod-api
 /apod-api
+
+# ignore keys
+key

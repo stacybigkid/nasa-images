@@ -18,19 +18,20 @@ class WisePhoto:
     '''
     def __init__(self, date=None):
 
+        # date
         if not date:
             self.date = str(dt.today())
         else:
             self.date = date
 
-        # Photo attributes
-        self.photo_request = 'http://0.0.0.0:5000/v1/apod/?concept_tags=True&date=' + self.date
+        # photo attributes
+        self.photo_request = 'http://0.0.0.0:5001/v1/apod/?concept_tags=True&date=' + self.date
         try:
             self.photo = self.get_photo()
         except:
             print('There is no APOD for the provided date!')
 
-        # Quote attribues
+        # quote attribues
         if date:
             self.zen_request = 'https://zenquotes.io/api/random'
         else:
@@ -39,6 +40,18 @@ class WisePhoto:
         self.fontScale = 2
         self.color = (255,255,255)
         self.thickness = 2
+
+        # storage
+        if not os.path.exists('./out'):
+            self.out_path = os.makedirs('./out')
+        else: 
+            self.out_path = './out'
+        
+        if not os.path.exists('./library'):
+            self.library = os.makedirs('./library')
+        else:
+            self.library = './library'
+
         
 
     def get_photo(self):
@@ -69,7 +82,7 @@ class WisePhoto:
         px_w, px_h = text_size[0]
         return (px_w, px_h)
 
-    def get_accent_color(self, img, k=8):
+    def get_accent_color(self, img, k=10):
         ''' calculate proportion of each of k colors in input img
         :param img: img where k colors should be extracted and quantified 
         :type: BGR img
@@ -156,6 +169,8 @@ class WisePhoto:
                             self.thickness, 
                             lineType = cv2.LINE_AA)
 
+        cv2.imwrite(os.path.join(self.library, f'{self.date}.png'), wise_photo)
+
         return wise_photo
 
 # Starting OpenCV tutorials on APOD:
@@ -167,7 +182,7 @@ class WisePhoto:
         if k == 27: 
             cv2.destroyAllWindows()
         elif k == ord('s'): 
-            cv2.imwrite(f'./out/{name}.png', img)
+            cv2.imwrite(os.path.join(self.out, f'{name}.png'), img)
 
     # 2021-02-02 - draw line
     def draw_line(self, img, start, end, color, thickness):
@@ -245,8 +260,6 @@ class WisePhoto:
             if cv2.waitKey(20) & 0xFF == 27:
                 break
         cv2.destroyAllWindows()
-
-
 
 
 
