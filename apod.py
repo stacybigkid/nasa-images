@@ -83,13 +83,6 @@ class WisePhoto:
             # print(f"Date: {date} has no APOD")
             return None
     
-    def generate_date(self):
-        mmdd = lambda x: f'0{x}' if (len(str(x)) < 2) else str(x)
-        random_year = str(random.randint(1996, 2021))
-        random_month = mmdd(random.randint(1, 12))
-        random_day = mmdd(random.randint(1,31))
-        return f'{random_year}-{random_month}-{random_day}'
-
     def get_quote(self):
         zen_request = 'https://zenquotes.io/api/today'
         request = urllib.request.Request(zen_request)
@@ -98,6 +91,13 @@ class WisePhoto:
         values = json.loads(data)[0]
         quote = values['q']
         return quote
+
+    def generate_date(self):
+        mmdd = lambda x: f'0{x}' if (len(str(x)) < 2) else str(x)
+        random_year = str(random.randint(1996, 2021))
+        random_month = mmdd(random.randint(1, 12))
+        random_day = mmdd(random.randint(1,31))
+        return f'{random_year}-{random_month}-{random_day}'
 
     def get_text_size(self, quote):
         text = quote
@@ -150,6 +150,22 @@ class WisePhoto:
         color = tuple([int(i) for i in color])
 
         return color
+
+    def get_non_features(self, img):
+        img = img
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        sift = cv2.SIFT_create()
+        kp, des = sift.detectAndCompute(gray, None)
+
+        features = sorted(zip(kp, des), key=lambda x: x[1][3], reverse=True)
+        print(f"num features: {len(features)}")
+        half = int(0.1 * len(features))
+        # print(features[0][0])
+        filtered_kp = [feature[0] for feature in features[:half]]
+        print(f'num filtered features: {len(filtered_kp)}')
+        img = cv2.drawKeypoints(gray, filtered_kp, img, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+        return img
 
     def wise_photo(self):
         bg = self.photo
@@ -293,10 +309,12 @@ if __name__ == '__main__':
     
     apod = WisePhoto()
 
-
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
 
-    img = apod.wise_photo()
-    apod.show(apod.date, img)
+    # img = apod.wise_photo()
+    # apod.show(apod.date, img)
+
+    # img = apod.get_non_features(apod.photo)
+    # apod.show('Grey', img)
 
