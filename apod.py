@@ -8,6 +8,7 @@ from skimage import io
 import textwrap
 import numpy as np
 import random
+from scipy.spatial import ConvexHull
 
 class WisePhoto:
     '''
@@ -28,6 +29,7 @@ class WisePhoto:
 
         # date
         self.date = str(dt.today())
+        # self.date = '2021-01-20'
 
         # photo attributes
         # try getting APOD with today's date
@@ -153,19 +155,30 @@ class WisePhoto:
 
     def get_non_features(self, img):
         img = img
+        self.show('raw', img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sift = cv2.SIFT_create()
-        kp, des = sift.detectAndCompute(gray, None)
+        kps = sift.detect(gray, None)
 
-        features = sorted(zip(kp, des), key=lambda x: x[1][3], reverse=True)
-        print(f"num features: {len(features)}")
-        half = int(0.1 * len(features))
-        # print(features[0][0])
-        filtered_kp = [feature[0] for feature in features[:half]]
-        print(f'num filtered features: {len(filtered_kp)}')
-        img = cv2.drawKeypoints(gray, filtered_kp, img, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        sorted_kps = sorted(kps, key=lambda kp: kp.size, reverse=True)
+        fraction = int(0.05 * len(kps))
+        sorted_kps = sorted_kps[:fraction]
+        # img = cv2.drawKeypoints(gray, sorted_kps[:fraction], img, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
-        return img
+        coords = [list(kp.pt) for kp in sorted_kps]
+        print(f'num coords: {len(coords)}')
+        # print(f'coords: {coords}')
+        ch = ConvexHull(coords)
+        print(ch.vertices)
+        coords = [list(coords[i]) for i in ch.vertices]
+        print(coords)
+        
+        mask = np.zeros((img.shape[0], img.shape[1]))
+        mask = self.draw_polygon(mask, coords, close=True, fill=True, color=self.color).astype(np.uint8)
+        mask = cv2.bitwise_not(mask)
+
+
+        return mask
 
     def wise_photo(self):
         bg = self.photo
@@ -315,6 +328,6 @@ if __name__ == '__main__':
     # img = apod.wise_photo()
     # apod.show(apod.date, img)
 
-    # img = apod.get_non_features(apod.photo)
-    # apod.show('Grey', img)
+    img = apod.get_non_features(apod.photo)
+    apod.show('Mask', img)
 
