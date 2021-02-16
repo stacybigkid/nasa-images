@@ -28,8 +28,8 @@ class WisePhoto:
             self.key = credentials['key']
 
         # date
-        self.date = str(dt.today())
-        # self.date = '2021-01-20'
+        # self.date = str(dt.today())
+        self.date = '2021-01-29'
 
         # photo attributes
         # try getting APOD with today's date
@@ -152,6 +152,36 @@ class WisePhoto:
         color = tuple([int(i) for i in color])
 
         return color
+    
+    # two slope and drawLine from stack overflow answer:
+    # https://stackoverflow.com/questions/59578855/opencv-python-how-do-i-draw-a-line-using-the-gradient-and-the-first-point
+    def slope(self, x1,y1,x2,y2):
+        ###finding slope
+        if x2!=x1:
+            return((y2-y1)/(x2-x1))
+        else:
+            return 'NA'
+
+    def drawLine(self, image,x1,y1,x2,y2):
+
+        m=self.slope(x1,y1,x2,y2)
+        h,w=image.shape[:2]
+        if m!='NA':
+            ### here we are essentially extending the line to x=0 and x=width
+            ### and calculating the y associated with it
+            ##starting point
+            px=0
+            py=-(x1-0)*m+y1
+            ##ending point
+            qx=w
+            qy=-(x2-w)*m+y2
+        else:
+        ### if slope is zero, draw a line with x=x1 and y=0 and y=height
+            px,py=x1,0
+            qx,qy=x1,h
+        mask = cv2.line(image, (int(px), int(py)), (int(qx), int(qy)), (255, 255, 255), 2)
+        return mask
+
 
     def get_non_features(self, img):
         img = img
@@ -161,7 +191,7 @@ class WisePhoto:
         kps = sift.detect(gray, None)
 
         sorted_kps = sorted(kps, key=lambda kp: kp.size, reverse=True)
-        fraction = int(0.05 * len(kps))
+        fraction = int(0.01 * len(kps))
         sorted_kps = sorted_kps[:fraction]
         # img = cv2.drawKeypoints(gray, sorted_kps[:fraction], img, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
@@ -175,10 +205,55 @@ class WisePhoto:
         
         mask = np.zeros((img.shape[0], img.shape[1]))
         mask = self.draw_polygon(mask, coords, close=True, fill=True, color=self.color).astype(np.uint8)
+        self.show('mask', mask)
         mask = cv2.bitwise_not(mask)
 
+        coords = coords + [coords[0]]
+        
+        edges = []
+        for i, coord in enumerate(coords[:-1]):
+            x1, y1 = coord
+            x2, y2 = coords[i+1]
+            
+            bg = np.zeros(mask.shape)
+            line = self.drawLine(bg, x1, y1, x2, y2).astype(np.uint8)
+            # self.show('line', line)
 
-        return mask
+            h, w = line.shape[:2]
+
+            corners = [(0,0),
+                        (w-1, 0),
+                        (w-1, h-1), 
+                        (0, h-1)]
+             
+            print(f'bg.shape: {bg.shape}')
+            print(f'line.shape: {line.shape}')
+            print(f'corners: {corners}')
+
+            corner_data = []
+
+            for i, corner in enumerate(corners):
+                corner_mask = line.copy()
+                # print(f'corner: {corner}')
+                retval, image, mask2, rect = cv2.floodFill(corner_mask, mask=None, seedPoint=corner, newVal=255)
+                # rects.append(rect)
+                # corner_masks.append(corner_mask)
+                area = np.divide(np.sum(corner_mask), 255)
+                # areas.append(area)
+                corner_data.append([corner_mask, rect, area])
+
+            
+            corner_data = sorted(corner_data, key=lambda corner: corner[2])
+            print(f'corner data {corner_data}')
+
+            edges.append(corner_data[0])
+            
+
+        print(f"Edges: {edges}")
+        text_edges = sorted(edges, key=lambda edge: edge[2], reverse=True)
+        text_edge = text_edges[0]
+        print(f'text edge: ', text_edge)
+        return text_edge[0]
 
     def wise_photo(self):
         bg = self.photo
