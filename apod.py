@@ -15,7 +15,8 @@ class WisePhoto:
     A class to generate a photo from NASA's Astronomy Photo of the Day API. 
     Methods are image processing functions from OpenCV that can be applied to the APOD.
 
-    :param date: the date of the desired APOD in 'YYYY-MM-DD' format. default is today's date.
+    :param date: the date of the desired APOD in 'YYYY-MM-DD' format. \
+                    default is today's date.
     :param type: str
     '''
     def __init__(self):
@@ -28,8 +29,8 @@ class WisePhoto:
             self.key = credentials['key']
 
         # date
-        # self.date = str(dt.today())
-        self.date = '2021-01-29'
+        self.date = str(dt.today())
+        # self.date = '2021-01-29'
 
         # photo attributes
         # try getting APOD with today's date
@@ -115,7 +116,8 @@ class WisePhoto:
         :param img: img where k colors should be extracted and quantified 
         :type: BGR img
 
-        :param k: number of colors to separate img into, must eb 3 or more; default=5
+        :param k: number of colors to separate img into, must eb 3 or more; \
+                default=5
         :type: int 
         '''
         assert k >= 3, 'k must be set to 3 or more!'
@@ -125,7 +127,8 @@ class WisePhoto:
         k_in = lab.reshape((-1, 3))
 
         # k means
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 
+                    10, 1.0)
         flags = cv2.KMEANS_RANDOM_CENTERS
         _, labels, centers = cv2.kmeans(k_in, k, None, criteria, 10, flags)
         # print('Centers: ', centers)
@@ -142,7 +145,8 @@ class WisePhoto:
         # print('color label: ', color_label)
 
         # reformat color centers to bgr tuples
-        bgr_centers = cv2.cvtColor(np.uint8([centers]), cv2.COLOR_Lab2BGR).astype(int)
+        bgr_centers = cv2.cvtColor(np.uint8([centers]), 
+                                cv2.COLOR_Lab2BGR).astype(int)
         bgr_centers = np.squeeze(bgr_centers)
         bgr_centers = [tuple(c) for c in bgr_centers]
         # print('BGR Centers: ', bgr_centers)
@@ -153,7 +157,7 @@ class WisePhoto:
 
         return color
     
-    # two slope and drawLine from stack overflow answer:
+    # slope and drawLine functions from stack overflow answer:
     # https://stackoverflow.com/questions/59578855/opencv-python-how-do-i-draw-a-line-using-the-gradient-and-the-first-point
     def slope(self, x1,y1,x2,y2):
         ###finding slope
@@ -167,7 +171,7 @@ class WisePhoto:
         m=self.slope(x1,y1,x2,y2)
         h,w=image.shape[:2]
         if m!='NA':
-            ### here we are essentially extending the line to x=0 and x=width
+            ### extend the line to x=0 and x=width
             ### and calculating the y associated with it
             ##starting point
             px=0
@@ -184,75 +188,90 @@ class WisePhoto:
 
 
     def get_non_features(self, img):
+        # load img, convert to greyscale, 
+        # extract keypoint (kp) features
         img = img
-        self.show('raw', img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sift = cv2.SIFT_create()
         kps = sift.detect(gray, None)
 
-        sorted_kps = sorted(kps, key=lambda kp: kp.size, reverse=True)
+        # sort kps largest to smallest
+        # keep top 1% 
+        sorted_kps = sorted(kps, 
+                            key=lambda kp: kp.size, reverse=True)
         fraction = int(0.01 * len(kps))
         sorted_kps = sorted_kps[:fraction]
-        # img = cv2.drawKeypoints(gray, sorted_kps[:fraction], img, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-
-        coords = [list(kp.pt) for kp in sorted_kps]
-        print(f'num coords: {len(coords)}')
-        # print(f'coords: {coords}')
-        ch = ConvexHull(coords)
-        print(ch.vertices)
-        coords = [list(coords[i]) for i in ch.vertices]
-        print(coords)
         
+        # to view keypoints found in img
+        # img = cv2.drawKeypoints(gray, 
+        #                         sorted_kps[:fraction], 
+        #                         img, 
+        #                         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+        # reformat coords into list of lists
+        # get enclosing shape of keypoints
+        # hull vertices are returned in counterclockwise order
+        coords = [list(kp.pt) for kp in sorted_kps]
+        ch = ConvexHull(coords)
+        hull = [list(coords[i]) for i in ch.vertices]
+        
+        # create inverse mask from hull vertices
         mask = np.zeros((img.shape[0], img.shape[1]))
-        mask = self.draw_polygon(mask, coords, close=True, fill=True, color=self.color).astype(np.uint8)
+        mask = self.draw_polygon(mask, 
+                                hull, 
+                                close=True, 
+                                fill=True, 
+                                color=self.color).astype(np.uint8)
         self.show('mask', mask)
         mask = cv2.bitwise_not(mask)
 
-        coords = coords + [coords[0]]
-        
+        # iterate over pairs of hull vertices
+        # draw line that extends to img edges 
+        # from each vertex
+        hull = hull + [hull[0]]
         edges = []
-        for i, coord in enumerate(coords[:-1]):
-            x1, y1 = coord
-            x2, y2 = coords[i+1]
+        for i, v in enumerate(hull[:-1]):
+            x1, y1 = v
+            x2, y2 = hull[i+1]
             
-            bg = np.zeros(mask.shape)
-            line = self.drawLine(bg, x1, y1, x2, y2).astype(np.uint8)
+            bg = np.zeros(img.shape[:2])
+            line_mask = self.drawLine(bg, 
+                                      x1, 
+                                      y1, 
+                                      x2, 
+                                      y2).astype(np.uint8)
             # self.show('line', line)
 
-            h, w = line.shape[:2]
+            h, w = line_mask.shape[:2]
 
             corners = [(0,0),
                         (w-1, 0),
                         (w-1, h-1), 
                         (0, h-1)]
-             
-            print(f'bg.shape: {bg.shape}')
-            print(f'line.shape: {line.shape}')
-            print(f'corners: {corners}')
 
+            # flood fill the line mask from each corner
             corner_data = []
-
             for i, corner in enumerate(corners):
-                corner_mask = line.copy()
-                # print(f'corner: {corner}')
-                retval, image, mask2, rect = cv2.floodFill(corner_mask, mask=None, seedPoint=corner, newVal=255)
-                # rects.append(rect)
-                # corner_masks.append(corner_mask)
+                corner_mask = line_mask.copy()
+                _, _, _, rect = cv2.floodFill(corner_mask, 
+                                              mask=None, 
+                                              seedPoint=corner, 
+                                              newVal=255)
                 area = np.divide(np.sum(corner_mask), 255)
-                # areas.append(area)
                 corner_data.append([corner_mask, rect, area])
 
-            
-            corner_data = sorted(corner_data, key=lambda corner: corner[2])
-            print(f'corner data {corner_data}')
-
+            # sort line masks by area
+            # keep smallest corner mask in array edges
+            corner_data = sorted(corner_data, 
+                                 key=lambda corner: corner[2])
             edges.append(corner_data[0])
             
 
-        print(f"Edges: {edges}")
-        text_edges = sorted(edges, key=lambda edge: edge[2], reverse=True)
+        # sort all edges by size
+        # keep largest edge mask for text in wise_photo
+        text_edges = sorted(edges, 
+                            key=lambda edge: edge[2], reverse=True)
         text_edge = text_edges[0]
-        print(f'text edge: ', text_edge)
         return text_edge[0]
 
     def wise_photo(self):
@@ -396,6 +415,7 @@ class WisePhoto:
 if __name__ == '__main__':
     
     apod = WisePhoto()
+    apod.wise_photo()
 
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
@@ -403,6 +423,6 @@ if __name__ == '__main__':
     # img = apod.wise_photo()
     # apod.show(apod.date, img)
 
-    img = apod.get_non_features(apod.photo)
-    apod.show('Mask', img)
+    # img = apod.get_non_features(apod.photo)
+    # apod.show('Mask', img)
 
