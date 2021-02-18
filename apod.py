@@ -29,8 +29,8 @@ class WisePhoto:
             self.key = credentials['key']
 
         # date
-        self.date = str(dt.today())
-        # self.date = '2021-01-29'
+        # self.date = str(dt.today())
+        self.date = '2021-01-29'
 
         # photo attributes
         # try getting APOD with today's date
@@ -186,6 +186,18 @@ class WisePhoto:
         mask = cv2.line(image, (int(px), int(py)), (int(qx), int(qy)), (255, 255, 255), 2)
         return mask
 
+    def get_non_edges(self, img):
+        img = img
+        self.show('original', img)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blur = cv2.medianBlur(gray, 7)
+        edges = cv2.Canny(blur,100,150)
+        d_k = np.ones((5,5), np.uint8)
+        dilate = cv2.dilate(edges, kernel=d_k, iterations=3)
+        o_k = np.ones((3,3), np.uint8)
+        open = cv2.morphologyEx(dilate, cv2.MORPH_OPEN, kernel=o_k)
+        self.show('Canny', edges)
+        return open
 
     def get_non_features(self, img):
         # load img, convert to greyscale, 
@@ -280,6 +292,7 @@ class WisePhoto:
         # print(f'shape: {bg.shape}')
         quote = self.get_quote()
         qu_w, qu_h = self.get_text_size(quote)
+
     
         chars = len(quote)
         px_per_char = qu_w // chars
@@ -293,15 +306,21 @@ class WisePhoto:
         # print('Text width: ', char_w)
         
         wrapped_text = textwrap.wrap(quote, width=char_w)
-        num_lines = len(wrapped_text) - 1
+        num_lines = len(wrapped_text)
+        gap = int(qu_h + (0.3 * qu_h))
+        qu_bbox_h = gap * num_lines
+
+        if qu_bbox_h > bg_h:
+            font_scale = self.fontScale - 1
+        else:
+            font_scale = self.fontScale
         # print(wrapped_text)
 
         color = self.get_accent_color(bg)
         # print(f'color: {color}')
         
         for i, line in enumerate(wrapped_text):
-            gap = int(qu_h + (0.3 * qu_h))
-            qu_bbox_h = gap * num_lines
+
             ori_y = (bg_h - qu_bbox_h) // 2
             y = ori_y + (i * gap)
 
@@ -312,7 +331,7 @@ class WisePhoto:
             x = qu_bbox_x
             
             wise_photo = cv2.putText(bg, line, (x, y), self.font,
-                            self.fontScale, 
+                            font_scale, 
                             color, 
                             self.thickness, 
                             lineType = cv2.LINE_AA)
@@ -415,7 +434,7 @@ class WisePhoto:
 if __name__ == '__main__':
     
     apod = WisePhoto()
-    apod.wise_photo()
+    # apod.wise_photo()
 
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
@@ -423,6 +442,6 @@ if __name__ == '__main__':
     # img = apod.wise_photo()
     # apod.show(apod.date, img)
 
-    # img = apod.get_non_features(apod.photo)
-    # apod.show('Mask', img)
+    img = apod.get_non_edges(apod.photo)
+    apod.show('Mask', img)
 
