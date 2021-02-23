@@ -29,8 +29,8 @@ class WisePhoto:
             self.key = credentials['key']
 
         # date
-        # self.date = str(dt.today())
-        self.date = '2021-01-29'
+        self.date = str(dt.today())
+        # self.date = '2021-01-29'
 
         # photo attributes
         # try getting APOD with today's date
@@ -192,17 +192,18 @@ class WisePhoto:
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blur = cv2.medianBlur(gray, 7)
         edges = cv2.Canny(blur,100,150)
-        d_k = np.ones((5,5), np.uint8)
-        dilate = cv2.dilate(edges, kernel=d_k, iterations=3)
-        o_k = np.ones((3,3), np.uint8)
-        open = cv2.morphologyEx(dilate, cv2.MORPH_OPEN, kernel=o_k)
+        # d_k = np.ones((5,5), np.uint8)
+        # dilate = cv2.dilate(edges, kernel=d_k, iterations=3)
+        # o_k = np.ones((3,3), np.uint8)
+        # opened = cv2.morphologyEx(dilate, cv2.MORPH_OPEN, kernel=o_k)
         self.show('Canny', edges)
-        return open
+        return edges
 
     def get_non_features(self, img):
         # load img, convert to greyscale, 
         # extract keypoint (kp) features
         img = img
+        self.show('today', img)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         sift = cv2.SIFT_create()
         kps = sift.detect(gray, None)
@@ -245,6 +246,9 @@ class WisePhoto:
         for i, v in enumerate(hull[:-1]):
             x1, y1 = v
             x2, y2 = hull[i+1]
+
+            line = [x1, y1, x2, y2]
+            slope = self.slope(x1, y1, x2, y2)
             
             bg = np.zeros(img.shape[:2])
             line_mask = self.drawLine(bg, 
@@ -270,7 +274,7 @@ class WisePhoto:
                                               seedPoint=corner, 
                                               newVal=255)
                 area = np.divide(np.sum(corner_mask), 255)
-                corner_data.append([corner_mask, rect, area])
+                corner_data.append([corner_mask, rect, area, line, slope])
 
             # sort line masks by area
             # keep smallest corner mask in array edges
@@ -284,7 +288,8 @@ class WisePhoto:
         text_edges = sorted(edges, 
                             key=lambda edge: edge[2], reverse=True)
         text_edge = text_edges[0]
-        return text_edge[0]
+        print(f'chosen line: {text_edge[-2]}, slope: {text_edge[-1]}')
+        return text_edge
 
     def wise_photo(self):
         bg = self.photo
@@ -293,7 +298,15 @@ class WisePhoto:
         quote = self.get_quote()
         qu_w, qu_h = self.get_text_size(quote)
 
-    
+        # get_non_features returns in the following order:
+        # 0 : mask of region with fewest features
+        # 1 : bounding box of the masked region
+        # 2 : area of the masked region
+        # -2 : coorinates of line as list [x1, y1, x2, y2]
+        # -1 : slope of line
+
+        feature_line = self.get_non_features(bg)
+        print(f'Line: {feature_line[-1]}')
         chars = len(quote)
         px_per_char = qu_w // chars
 
@@ -324,11 +337,14 @@ class WisePhoto:
             ori_y = (bg_h - qu_bbox_h) // 2
             y = ori_y + (i * gap)
 
+            x = y / feature_line[-1]
+            x = int(x)
+
             # start new line according to width in px of that line
             # x = (bg_w - (len(line) * px_per_char)) // 2
             
             # start new line at same x position
-            x = qu_bbox_x
+            # x = qu_bbox_x
             
             wise_photo = cv2.putText(bg, line, (x, y), self.font,
                             font_scale, 
