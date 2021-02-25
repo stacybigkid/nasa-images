@@ -78,9 +78,11 @@ class WisePhoto:
         if media_type == 'image': 
             img_url = values['url']
             rgb = io.imread(img_url)
+            if len(rgb.shape) == 2:
+                rgb = cv2.cvtColor(rgb,cv2.COLOR_GRAY2RGB)
             r,g,b = cv2.split(rgb)
             bgr = cv2.merge([b,g,r])
-            # print(f"Date: {date} has APOD")
+            print(f"Date: {date} has APOD")
             return bgr
         else: 
             # print(f"Date: {date} has no APOD")
@@ -305,8 +307,8 @@ class WisePhoto:
         # -2 : coorinates of line as list [x1, y1, x2, y2]
         # -1 : slope of line
 
-        feature_line = self.get_non_features(bg)
-        print(f'Line: {feature_line[-1]}')
+        # feature_line = self.get_non_features(bg)
+        # print(f'Line: {feature_line[-1]}')
         chars = len(quote)
         px_per_char = qu_w // chars
 
@@ -337,14 +339,14 @@ class WisePhoto:
             ori_y = (bg_h - qu_bbox_h) // 2
             y = ori_y + (i * gap)
 
-            x = y / feature_line[-1]
-            x = int(x)
+            # x = y / feature_line[-1]
+            # x = int(x)
 
             # start new line according to width in px of that line
             # x = (bg_w - (len(line) * px_per_char)) // 2
             
             # start new line at same x position
-            # x = qu_bbox_x
+            x = qu_bbox_x
             
             wise_photo = cv2.putText(bg, line, (x, y), self.font,
                             font_scale, 
@@ -450,7 +452,8 @@ class WisePhoto:
 if __name__ == '__main__':
     
     apod = WisePhoto()
-    # apod.wise_photo()
+    apod.wise_photo()
+    # apod.get_photo()
 
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
@@ -458,6 +461,6 @@ if __name__ == '__main__':
     # img = apod.wise_photo()
     # apod.show(apod.date, img)
 
-    img = apod.get_non_edges(apod.photo)
-    apod.show('Mask', img)
+    # img = apod.get_non_edges(apod.photo)
+    # apod.show('Mask', img)
 
