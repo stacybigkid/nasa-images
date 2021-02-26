@@ -169,7 +169,6 @@ class WisePhoto:
             return 'NA'
 
     def drawLine(self, image,x1,y1,x2,y2):
-
         m=self.slope(x1,y1,x2,y2)
         h,w=image.shape[:2]
         if m!='NA':
@@ -215,13 +214,15 @@ class WisePhoto:
         sorted_kps = sorted(kps, 
                             key=lambda kp: kp.size, reverse=True)
         fraction = int(0.01 * len(kps))
+        if len(fraction) < 3:
+            fraction = int(0.02 * len(kps))
         sorted_kps = sorted_kps[:fraction]
         
         # to view keypoints found in img
-        # img = cv2.drawKeypoints(gray, 
-        #                         sorted_kps[:fraction], 
-        #                         img, 
-        #                         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+        img = cv2.drawKeypoints(gray, 
+                                sorted_kps[:fraction], 
+                                img, 
+                                flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
         # reformat coords into list of lists
         # get enclosing shape of keypoints
@@ -454,6 +455,8 @@ if __name__ == '__main__':
     apod = WisePhoto()
     apod.wise_photo()
     # apod.get_photo()
+    # apod.show(apod.date, apod.photo)
+    # apod.get_non_features(apod.photo)
 
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]
     # poly = apod.draw_polygon(apod.photo, pts, fill=True, color=(0, 255, 255))
