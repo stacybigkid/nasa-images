@@ -453,9 +453,9 @@ class WisePhoto:
 if __name__ == '__main__':
     
     apod = WisePhoto()
-    apod.wise_photo()
-    # apod.get_photo()
-    # apod.show(apod.date, apod.photo)
+    # apod.wise_photo()
+    apod.get_photo()
+    apod.show(apod.date, apod.photo)
     # apod.get_non_features(apod.photo)
 
     # pts = [[24, 497], [174, 502], [219, 627], [137, 701], [21, 627]]

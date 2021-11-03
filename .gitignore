@@ -2,9 +2,11 @@
 /out
 /library
 
-
 # ignore the apod-api
 /apod-api
 
 # hide credentials
 config.json
+
+# hide pycache
+/nasaimages/__pycache__
