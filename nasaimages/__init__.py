@@ -1,1 +1,1 @@
-from .wisephoto import WisePhoto
+from .WisePhoto import WisePhoto
