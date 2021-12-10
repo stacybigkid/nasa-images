@@ -1,1 +1,0 @@
-from .WisePhoto import WisePhoto

@@ -1,4 +1,4 @@
-from nasaimages import WisePhoto
+from nasaimages.wisephoto import WisePhoto
 
 apod = WisePhoto()
 # apod.show(apod.date, apod.photo)
